@@ -121,12 +121,12 @@ async function run() {
     })
 
     // get carts items by email 
-    // app.get('/carts/:email', async (req, res) => {
-    //     const email = req.params.email
-    //     const query = { email: email }
-    //     const result = await cartsCollection.find(query).toArray()
-    //     res.send(result)
-    // })
+    app.get('/carts/:email', async (req, res) => {
+        const email = req.params.email
+        const query = { email: email }
+        const result = await cartsCollection.find(query).toArray()
+        res.send(result)
+    })
 
     // get carts items by id 
     // app.get('/carts/id/:id', async (req, res) => {
