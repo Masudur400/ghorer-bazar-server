@@ -31,6 +31,7 @@ async function run() {
         const usersCollection = client.db('ghorer-bazar').collection('users')
         const productsCollection = client.db('ghorer-bazar').collection('products')
         const cartsCollection = client.db('ghorer-bazar').collection('carts')
+        const ordersCollection = client.db('ghorer-bazar').collection('orders')
 
 
 
@@ -140,7 +141,7 @@ async function run() {
                     productImage: data.productImage,
                     productDetails: data.productDetails,
                     productCategory: data.productCategory,
-                    productAddDate: data.productAddDate 
+                    productAddDate: data.productAddDate
                 }
             }
             const result = await productsCollection.updateOne(filter, updatedDoc)
@@ -184,6 +185,27 @@ async function run() {
             res.send(result)
         })
 
+        // post order 
+        app.post('/orders', async (req, res) => {
+            const order = req.body
+            const orderResult = await ordersCollection.insertOne(order)
+
+            // delete cart items 
+            const query = {
+                _id: {
+                    $in: order.productsIds.map(id => new ObjectId(id))
+                }
+            }
+            const deleteResult = await cartsCollection.deleteMany(query)
+
+            res.send( {orderResult, deleteResult})
+        })
+
+        // get orders 
+        app.get('/orders', async (req, res)=>{
+            const result = await ordersCollection.find().toArray()
+            res.send(result)
+        })
 
 
 
