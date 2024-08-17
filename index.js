@@ -189,7 +189,6 @@ async function run() {
         app.post('/orders', async (req, res) => {
             const order = req.body
             const orderResult = await ordersCollection.insertOne(order)
-
             // delete cart items 
             const query = {
                 _id: {
@@ -197,13 +196,52 @@ async function run() {
                 }
             }
             const deleteResult = await cartsCollection.deleteMany(query)
-
-            res.send( {orderResult, deleteResult})
+            res.send({ orderResult, deleteResult })
         })
 
         // get orders 
-        app.get('/orders', async (req, res)=>{
+        app.get('/orders', async (req, res) => {
             const result = await ordersCollection.find().toArray()
+            res.send(result)
+        })
+
+        // get order by email 
+        app.get('/orders/:email', async (req, res) => {
+            const email = req.params.email
+            const query = { email: email }
+            const result = await ordersCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        // get order by id 
+        app.get('/orders/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await ordersCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        // order update by id 
+        app.patch('/orders/patch/:id', async (req, res) => {
+            const id = req.params.id
+            const data = req.body
+            const filter = { _id: new ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    name:data.name,
+                    email:data.email,
+                    phone:data.phone,
+                    address:data.address,
+                    totalPrice:data.totalPrice,
+                    products:data.products,
+                    images:data.images,
+                    orderDate:data.orderDate,
+                    status:data.status,
+                    productsIds:data.productsIds,
+                    deliveryCharge:data.deliveryCharge,
+                }
+            }
+            const result = await ordersCollection.updateOne(filter, updatedDoc)
             res.send(result)
         })
 
