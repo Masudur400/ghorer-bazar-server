@@ -33,6 +33,7 @@ async function run() {
         const productsCollection = client.db('ghorer-bazar').collection('products')
         const cartsCollection = client.db('ghorer-bazar').collection('carts')
         const ordersCollection = client.db('ghorer-bazar').collection('orders')
+        const completeCollection = client.db('ghorer-bazar').collection('completeList')
 
 
 
@@ -113,7 +114,7 @@ async function run() {
         })
 
         // get moderator user 
-        app.get('/users/moderator/:email',  async (req, res) => {
+        app.get('/users/moderator/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             const user = await usersCollection.findOne(query);
@@ -159,7 +160,7 @@ async function run() {
         })
 
         // product post 
-        app.post('/products',verifyAdmin,verifyAdminAndModerator, async (req, res) => {
+        app.post('/products', verifyAdmin, verifyAdminAndModerator, async (req, res) => {
             const data = req.body
             const result = await productsCollection.insertOne(data)
             res.send(result)
@@ -185,7 +186,7 @@ async function run() {
         })
 
         //product get by id
-        app.get('/products/:id',verifyToken, async (req, res) => {
+        app.get('/products/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await productsCollection.findOne(query)
@@ -193,7 +194,7 @@ async function run() {
         })
 
         //product delete by id
-        app.delete('/products/:id',verifyToken,verifyAdminAndModerator, async (req, res) => {
+        app.delete('/products/:id', verifyToken, verifyAdminAndModerator, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await productsCollection.deleteOne(query)
@@ -201,7 +202,7 @@ async function run() {
         })
 
         // product update by id 
-        app.patch('/products/:id',verifyToken , verifyAdminAndModerator, async (req, res) => {
+        app.patch('/products/:id', verifyToken, verifyAdminAndModerator, async (req, res) => {
             const id = req.params.id
             const data = req.body
             const filter = { _id: new ObjectId(id) }
@@ -241,7 +242,7 @@ async function run() {
         })
 
         // get carts items by id 
-        app.get('/carts/id/:id',verifyToken, async (req, res) => {
+        app.get('/carts/id/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await cartsCollection.findOne(query)
@@ -249,7 +250,7 @@ async function run() {
         })
 
         // delete cart by id 
-        app.delete('/carts/:id',verifyToken, async (req, res) => {
+        app.delete('/carts/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await cartsCollection.deleteOne(query)
@@ -257,7 +258,7 @@ async function run() {
         })
 
         // post order 
-        app.post('/orders',verifyToken, async (req, res) => {
+        app.post('/orders', verifyToken, async (req, res) => {
             const order = req.body
             const orderResult = await ordersCollection.insertOne(order)
             // delete cart items 
@@ -277,7 +278,7 @@ async function run() {
         })
 
         // get order by email 
-        app.get('/orders/:email',verifyToken, async (req, res) => {
+        app.get('/orders/:email', verifyToken, async (req, res) => {
             const email = req.params.email
             const query = { email: email }
             const result = await ordersCollection.find(query).toArray()
@@ -290,10 +291,10 @@ async function run() {
             const query = { _id: new ObjectId(id) }
             const result = await ordersCollection.find(query).toArray()
             res.send(result)
-        })  
+        })
 
         // order update by id 
-        app.patch('/orders/patch/:id',verifyToken, verifyAdminAndModerator, async (req, res) => {
+        app.patch('/orders/patch/:id', verifyToken, verifyAdminAndModerator, async (req, res) => {
             const id = req.params.id
             const data = req.body
             const filter = { _id: new ObjectId(id) }
@@ -317,16 +318,46 @@ async function run() {
         })
 
         // delete order by id 
-        app.delete('/orders/:id',verifyToken,  async (req, res) => {
+        app.delete('/orders/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await ordersCollection.deleteOne(query)
             res.send(result)
         })
 
-          
+        // post completeList 
+        app.post('/completeList', async (req, res) => {
+            const data = req.body
+            const query = { _id: new ObjectId(data._id) }
+            const existingList = await completeCollection.findOne(query)
+            if (existingList) {
+                return
+            }
+            const result = await completeCollection.insertOne(data)
+            res.send(result)
+        })
 
+        // get completeList 
+        app.get('/completeList', async (req, res) => {
+            const result = await completeCollection.find().toArray()
+            res.send(result)
+        })
 
+        // get completeList by id 
+        app.get('/completeList/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await completeCollection.findOne(query)
+            res.send(result)
+        })
+
+        // delete completeList by id 
+        app.delete('/completeList/dd/:id',verifyToken,verifyAdmin, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await completeCollection.deleteOne(query)
+            res.send(result)
+        })
 
 
 
