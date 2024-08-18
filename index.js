@@ -36,6 +36,52 @@ async function run() {
 
 
 
+        // jwt api 
+        app.post('/jwt', async (req, res) => {
+            const user = req.body
+            const token = jwt.sign(user, process.env.AccessToken, { expiresIn: '3h' })
+            res.send({ token })
+        })
+
+        // verify token 
+        const verifyToken = (req, res, next) => {
+            if (!req.headers.authorization) {
+                return res.status(401).send({ message: 'unauthorized access !' })
+            }
+            const token = req.headers.authorization.split(' ')[1]
+            jwt.verify(token, process.env.AccessToken, (error, decoded) => {
+                if (error) {
+                    return res.status(401).send({ message: 'unauthorized access !' })
+                }
+                req.decoded = decoded
+                next()
+            })
+        }
+
+        // verify Admin and Moderator 
+        const verifyAdminAndModerator = async (req, res, next) => {
+            const email = req.decoded.email
+            const query = { email: email }
+            const user = await usersCollection.findOne(query)
+            const isAdminAndModerator = user?.role === 'Moderator' || user?.role === "Admin"
+            if (!isAdminAndModerator) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next()
+        }
+
+        //verify Admin 
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email
+            const query = { email: email }
+            const user = await usersCollection.findOne(query)
+            const isAdmin = user?.role === 'Admin'
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next()
+        }
+
         // users post 
         app.post('/users', async (req, res) => {
             const userInfo = req.body
@@ -49,13 +95,37 @@ async function run() {
         })
 
         // users get 
-        app.get('/users', async (req, res) => {
+        app.get('/users',verifyToken, async (req, res) => {
             const result = await usersCollection.find().toArray()
             res.send(result)
         })
 
+        // get admin user  
+        app.get('/users/admin/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            let admin = false;
+            if (user) {
+                admin = user?.role === "Admin";
+            }
+            res.send({ admin })
+        })
+
+        // get moderator user 
+        app.get('/users/moderator/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            let moderator = false;
+            if (user) {
+                moderator = user?.role === "Moderator";
+            }
+            res.send({ moderator })
+        })
+
         // user get by email 
-        app.get('/users/:email', async (req, res) => {
+        app.get('/users/:email',verifyToken , async (req, res) => {
             const email = req.params.email
             const query = { email: email }
             const result = await usersCollection.findOne(query)
@@ -63,7 +133,7 @@ async function run() {
         })
 
         // user get by id 
-        app.get('/users/user/:id', async (req, res) => {
+        app.get('/users/user/:id',verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await usersCollection.findOne(query)
@@ -71,7 +141,7 @@ async function run() {
         })
 
         // update user data by id 
-        app.patch('/users/user/:id', async (req, res) => {
+        app.patch('/users/user/:id',verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id
             const currentUser = req.body
             const filter = { _id: new ObjectId(id) }
@@ -89,20 +159,20 @@ async function run() {
         })
 
         // product post 
-        app.post('/products', async (req, res) => {
+        app.post('/products',verifyToken,verifyAdmin,verifyAdminAndModerator, async (req, res) => {
             const data = req.body
             const result = await productsCollection.insertOne(data)
             res.send(result)
         })
 
         // all product get 
-        app.get('/products', async (req, res) => {
+        app.get('/products',verifyToken, async (req, res) => {
             const result = await productsCollection.find().toArray()
             res.send(result)
         })
 
         // all product get by search
-        app.get('/products/pp', async (req, res) => {
+        app.get('/products/pp',verifyToken, async (req, res) => {
             const filter = req.query
             const query = {
                 productName: {
@@ -115,7 +185,7 @@ async function run() {
         })
 
         //product get by id
-        app.get('/products/:id', async (req, res) => {
+        app.get('/products/:id',verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await productsCollection.findOne(query)
@@ -123,7 +193,7 @@ async function run() {
         })
 
         //product delete by id
-        app.delete('/products/:id', async (req, res) => {
+        app.delete('/products/:id',verifyToken,verifyAdminAndModerator, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await productsCollection.deleteOne(query)
@@ -131,7 +201,7 @@ async function run() {
         })
 
         // product update by id 
-        app.patch('/products/:id', async (req, res) => {
+        app.patch('/products/:id',verifyToken, verifyAdminAndModerator, async (req, res) => {
             const id = req.params.id
             const data = req.body
             const filter = { _id: new ObjectId(id) }
@@ -150,20 +220,20 @@ async function run() {
         })
 
         //  post cart 
-        app.post('/carts', async (req, res) => {
+        app.post('/carts',verifyToken, async (req, res) => {
             const data = req.body
             const result = await cartsCollection.insertOne(data)
             res.send(result)
         })
 
         // get carts 
-        app.get('/carts', async (req, res) => {
+        app.get('/carts',verifyToken, async (req, res) => {
             const result = await cartsCollection.find().toArray()
             res.send(result)
         })
 
         // get carts items by email 
-        app.get('/carts/:email', async (req, res) => {
+        app.get('/carts/:email',verifyToken, async (req, res) => {
             const email = req.params.email
             const query = { email: email }
             const result = await cartsCollection.find(query).toArray()
@@ -171,7 +241,7 @@ async function run() {
         })
 
         // get carts items by id 
-        app.get('/carts/id/:id', async (req, res) => {
+        app.get('/carts/id/:id',verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await cartsCollection.findOne(query)
@@ -179,7 +249,7 @@ async function run() {
         })
 
         // delete cart by id 
-        app.delete('/carts/:id', async (req, res) => {
+        app.delete('/carts/:id',verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await cartsCollection.deleteOne(query)
@@ -187,7 +257,7 @@ async function run() {
         })
 
         // post order 
-        app.post('/orders', async (req, res) => {
+        app.post('/orders',verifyToken, async (req, res) => {
             const order = req.body
             const orderResult = await ordersCollection.insertOne(order)
             // delete cart items 
@@ -201,13 +271,13 @@ async function run() {
         })
 
         // get orders 
-        app.get('/orders', async (req, res) => {
+        app.get('/orders',verifyToken, async (req, res) => {
             const result = await ordersCollection.find().toArray()
             res.send(result)
         })
 
         // get order by email 
-        app.get('/orders/:email', async (req, res) => {
+        app.get('/orders/:email',verifyToken, async (req, res) => {
             const email = req.params.email
             const query = { email: email }
             const result = await ordersCollection.find(query).toArray()
@@ -215,7 +285,7 @@ async function run() {
         })
 
         // get order by id 
-        app.get('/orders/:id', async (req, res) => {
+        app.get('/orders/:id',verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await ordersCollection.find(query).toArray()
@@ -223,23 +293,23 @@ async function run() {
         })
 
         // order update by id 
-        app.patch('/orders/patch/:id', async (req, res) => {
+        app.patch('/orders/patch/:id',verifyToken, verifyAdminAndModerator, async (req, res) => {
             const id = req.params.id
             const data = req.body
             const filter = { _id: new ObjectId(id) }
             const updatedDoc = {
                 $set: {
-                    name:data.name,
-                    email:data.email,
-                    phone:data.phone,
-                    address:data.address,
-                    totalPrice:data.totalPrice,
-                    products:data.products,
+                    name: data.name,
+                    email: data.email,
+                    phone: data.phone,
+                    address: data.address,
+                    totalPrice: data.totalPrice,
+                    products: data.products,
                     // images:data.images,
-                    orderDate:data.orderDate,
-                    status:data.status,
-                    productsIds:data.productsIds,
-                    deliveryCharge:data.deliveryCharge,
+                    orderDate: data.orderDate,
+                    status: data.status,
+                    productsIds: data.productsIds,
+                    deliveryCharge: data.deliveryCharge,
                 }
             }
             const result = await ordersCollection.updateOne(filter, updatedDoc)
@@ -247,7 +317,7 @@ async function run() {
         })
 
         // delete order by id 
-        app.delete('/orders/:id', async (req, res) => {
+        app.delete('/orders/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await ordersCollection.deleteOne(query)
