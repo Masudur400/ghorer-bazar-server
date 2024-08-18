@@ -95,13 +95,13 @@ async function run() {
         })
 
         // users get 
-        app.get('/users',verifyToken, async (req, res) => {
+        app.get('/users', async (req, res) => {
             const result = await usersCollection.find().toArray()
             res.send(result)
         })
 
         // get admin user  
-        app.get('/users/admin/:email', verifyToken, async (req, res) => {
+        app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             const user = await usersCollection.findOne(query);
@@ -113,7 +113,7 @@ async function run() {
         })
 
         // get moderator user 
-        app.get('/users/moderator/:email', verifyToken, async (req, res) => {
+        app.get('/users/moderator/:email',  async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             const user = await usersCollection.findOne(query);
@@ -125,7 +125,7 @@ async function run() {
         })
 
         // user get by email 
-        app.get('/users/:email',verifyToken , async (req, res) => {
+        app.get('/users/:email', async (req, res) => {
             const email = req.params.email
             const query = { email: email }
             const result = await usersCollection.findOne(query)
@@ -133,7 +133,7 @@ async function run() {
         })
 
         // user get by id 
-        app.get('/users/user/:id',verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/users/user/:id', verifyAdmin, async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await usersCollection.findOne(query)
@@ -141,7 +141,7 @@ async function run() {
         })
 
         // update user data by id 
-        app.patch('/users/user/:id',verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/users/user/:id', verifyAdmin, async (req, res) => {
             const id = req.params.id
             const currentUser = req.body
             const filter = { _id: new ObjectId(id) }
@@ -159,20 +159,20 @@ async function run() {
         })
 
         // product post 
-        app.post('/products',verifyToken,verifyAdmin,verifyAdminAndModerator, async (req, res) => {
+        app.post('/products',verifyAdmin,verifyAdminAndModerator, async (req, res) => {
             const data = req.body
             const result = await productsCollection.insertOne(data)
             res.send(result)
         })
 
         // all product get 
-        app.get('/products',verifyToken, async (req, res) => {
+        app.get('/products', async (req, res) => {
             const result = await productsCollection.find().toArray()
             res.send(result)
         })
 
         // all product get by search
-        app.get('/products/pp',verifyToken, async (req, res) => {
+        app.get('/products/pp', async (req, res) => {
             const filter = req.query
             const query = {
                 productName: {
@@ -201,7 +201,7 @@ async function run() {
         })
 
         // product update by id 
-        app.patch('/products/:id',verifyToken, verifyAdminAndModerator, async (req, res) => {
+        app.patch('/products/:id',verifyToken , verifyAdminAndModerator, async (req, res) => {
             const id = req.params.id
             const data = req.body
             const filter = { _id: new ObjectId(id) }
@@ -220,20 +220,20 @@ async function run() {
         })
 
         //  post cart 
-        app.post('/carts',verifyToken, async (req, res) => {
+        app.post('/carts', async (req, res) => {
             const data = req.body
             const result = await cartsCollection.insertOne(data)
             res.send(result)
         })
 
         // get carts 
-        app.get('/carts',verifyToken, async (req, res) => {
+        app.get('/carts', async (req, res) => {
             const result = await cartsCollection.find().toArray()
             res.send(result)
         })
 
         // get carts items by email 
-        app.get('/carts/:email',verifyToken, async (req, res) => {
+        app.get('/carts/:email', async (req, res) => {
             const email = req.params.email
             const query = { email: email }
             const result = await cartsCollection.find(query).toArray()
@@ -271,7 +271,7 @@ async function run() {
         })
 
         // get orders 
-        app.get('/orders',verifyToken, async (req, res) => {
+        app.get('/orders', async (req, res) => {
             const result = await ordersCollection.find().toArray()
             res.send(result)
         })
@@ -285,12 +285,12 @@ async function run() {
         })
 
         // get order by id 
-        app.get('/orders/:id',verifyToken, async (req, res) => {
+        app.get('/orders/:id', async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await ordersCollection.find(query).toArray()
             res.send(result)
-        })
+        })  
 
         // order update by id 
         app.patch('/orders/patch/:id',verifyToken, verifyAdminAndModerator, async (req, res) => {
@@ -317,12 +317,14 @@ async function run() {
         })
 
         // delete order by id 
-        app.delete('/orders/:id', verifyToken, async (req, res) => {
+        app.delete('/orders/:id',verifyToken,  async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
             const result = await ordersCollection.deleteOne(query)
             res.send(result)
         })
+
+          
 
 
 
