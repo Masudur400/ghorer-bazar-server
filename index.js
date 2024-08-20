@@ -61,7 +61,7 @@ async function run() {
 
         // verify Admin and Moderator 
         const verifyAdminAndModerator = async (req, res, next) => {
-            const email = req.decoded.email
+            const email = req?.decoded?.email
             const query = { email: email }
             const user = await usersCollection.findOne(query)
             const isAdminAndModerator = user?.role === 'Moderator' || user?.role === "Admin"
@@ -73,7 +73,7 @@ async function run() {
 
         //verify Admin 
         const verifyAdmin = async (req, res, next) => {
-            const email = req.decoded.email
+            const email = req?.decoded?.email
             const query = { email: email }
             const user = await usersCollection.findOne(query)
             const isAdmin = user?.role === 'Admin'
@@ -160,7 +160,7 @@ async function run() {
         })
 
         // product post 
-        app.post('/products', verifyAdmin, verifyAdminAndModerator, async (req, res) => {
+        app.post('/products', verifyToken, async (req, res) => {
             const data = req.body
             const result = await productsCollection.insertOne(data)
             res.send(result)
@@ -172,16 +172,34 @@ async function run() {
             res.send(result)
         })
 
+        //  product count 
+        app.get('/productsCount', async (req, res) => {
+            const count = await productsCollection.estimatedDocumentCount()
+            res.send({ count })
+        })
+
         // all product get by search
         app.get('/products/pp', async (req, res) => {
             const filter = req.query
+            const page = parseInt(req.query.page)
+            const size = parseInt(req.query.size)
             const query = {
                 productName: {
                     $regex: filter.search,
                     $options: 'i'
                 }
             }
-            const result = await productsCollection.find(query).toArray()
+            const result = await productsCollection.find(query).skip(page * size).limit(size).toArray()
+            res.send(result)
+        })
+
+        // all product get for only pagination
+        app.get('/products/pagination', async (req, res) => {
+             
+            const page = parseInt(req.query.page)
+            const size = parseInt(req.query.size)
+             
+            const result = await productsCollection.find().skip(page * size).limit(size).toArray()
             res.send(result)
         })
 
@@ -328,9 +346,10 @@ async function run() {
         // post completeList 
         app.post('/completeList', async (req, res) => {
             const data = req.body
-            const query = { _id: new ObjectId(data._id) }
-            const existingList = await completeCollection.findOne(query)
-            if (existingList) {
+            const query = { productId: data.productId }
+            const existingId = await completeCollection.findOne(query)
+            if (existingId) {
+                res.send({error:'data already posted'})
                 return
             }
             const result = await completeCollection.insertOne(data)
