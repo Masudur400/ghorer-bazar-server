@@ -142,7 +142,7 @@ async function run() {
         })
 
         // update user data by id 
-        app.patch('/users/user/:id', verifyAdmin, async (req, res) => {
+        app.patch('/users/user/:id',verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id
             const currentUser = req.body
             const filter = { _id: new ObjectId(id) }
